@@ -102,6 +102,9 @@ jobs:
         run: |
           docker tag ${{env.IMAGE_NAME}}:${{ github.sha }} ${{env.IMAGE_NAME}}:${{ env.DATE_TAG }}
 
+      - name: list Docker image
+        run: |
+          docker image ls  
 
       # Step 6 — Push finale verso Docker
       - name: Push Docker image to Docker Hub
