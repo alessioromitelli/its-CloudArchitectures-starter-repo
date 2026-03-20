@@ -43,7 +43,6 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t $IMAGE_NAME:${{ github.sha }} .
-          docker tag $IMAGE_NAME:${{ github.sha }} $IMAGE_NAME:${{ env.DATE_TAG }}
 
       # Step 6 — Salva l’immagine Docker in un file tar.gz
       # cosi può essere trasferita a un altro job
