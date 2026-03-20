@@ -98,7 +98,7 @@ jobs:
       # A:  <username>/its-node-demo:latest
       - name: Tag Docker image
         run: |
-          docker tag ${{env.IMAGE_NAME}}:${{ github.sha }} ${{env.IMAGE_NAME}}:${{ env.DATE_TAG }}
+          docker tag ${{env.IMAGE_NAME}}:${{ github.sha }} ${{secrets.DOCKERHUB_USERNAME}}/${{env.IMAGE_NAME}}:${{ github.sha }}
 
       - name: list Docker image
         run: |
@@ -107,5 +107,4 @@ jobs:
       # Step 6 — Push finale verso Docker
       - name: Push Docker image to Docker Hub
         run: |
-          docker image ls  
           docker push ${{secrets.DOCKERHUB_USERNAME}}/${{env.IMAGE_NAME}}:${{ github.sha }}
