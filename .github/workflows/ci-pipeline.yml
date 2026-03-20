@@ -49,7 +49,7 @@ jobs:
       # cosi può essere trasferita a un altro job
       - name: Save Docker image as artifact
         run: |
-          docker save $IMAGE_NAME:${{ env.DATE_TAG }} | gzip > image.tar.gz
+          docker save $IMAGE_NAME:${{ env.DATE_TAG }} $IMAGE_NAME:${{ env.DATE_TAG }}| gzip > image.tar.gz
 
       # Step 7 — Carica l’immagine salvata come artifact del workflow
       # Così il job DEPLOY potrà scaricarla
