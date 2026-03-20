@@ -66,9 +66,9 @@ jobs:
     if: github.ref == 'refs/heads/main'
     
     steps:
-      # Step 1 — Anche qui serve il codice, anche se non essenziale
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      # # Step 1 — Anche qui serve il codice, anche se non essenziale
+      # - name: Checkout repository
+      #   uses: actions/checkout@v4
 
       # Step 2 — Scarica l’artifact creato dal job BUILD
       - name: Download Docker image artifact
