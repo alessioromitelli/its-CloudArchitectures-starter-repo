@@ -10,8 +10,7 @@ on:
 # JOB 1 — BUILD (CI)
 # -------------------------
 jobs:
-  build:
-   docker-Build:
+  docker-Build:
     runs-on: ubuntu-latest # Runner GitHub Actions basato su Ubuntu
     
     env:
