@@ -56,52 +56,50 @@ jobs:
           path: image.tar.gz         # File da caricare
           retention-days: 1          # Lo mantiene 1 giorno (per sicurezza)
 
-  # # -------------------------
-  # # JOB 2 — DEPLOY (CD)
-  # # -------------------------
-  # deploy:
-  #   name: Load & Push to Docker Hub
-  #   needs: build                   # Il job parte SOLO se il job build è riuscito
-  #   runs-on: ubuntu-latest
+  # -------------------------
+  # JOB 2 — DEPLOY (CD)
+  # -------------------------
+  deploy:
+    name: Load & Push to Docker Hub
+    needs: build                   # Il job parte SOLO se il job build è riuscito
+    runs-on: ubuntu-latest
     
-  #   # Questo job si attiva SOLO se il push è sul branch "main"
-  #   if: github.ref == 'refs/heads/main'
-    
-  #   steps:
-  #     # Step 1 — Anche qui serve il codice, anche se non essenziale
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    # Questo job si attiva SOLO se il push è sul branch "main"
+    if: github.ref == 'refs/heads/main'
+    env:
+      IMAGE_NAME: its-node-demo
+      DATE_TAG: ${{ github.run_id }}-${{ github.run_number }}
+    steps:
 
-  #     # Step 2 — Scarica l’artifact creato dal job BUILD
-  #     - name: Download Docker image artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: docker-image # Nome definito nel job BUILD
+      # Step 2 — Scarica l’artifact creato dal job BUILD
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image # Nome definito nel job BUILD
 
-  #     # Step 3 — Ricarica l’immagine Docker dal file tar.gz
-  #     # Importante: NON rifacciamo la build
-  #     - name: Load Docker image
-  #       run: |
-  #         gunzip -c image.tar.gz | docker load
+      # Step 3 — Ricarica l’immagine Docker dal file tar.gz
+      # Importante: NON rifacciamo la build
+      - name: Load Docker image
+        run: |
+          gunzip -c image.tar.gz | docker load
 
-  #     # Step 4 — Login a Docker Hub usando i secrets del repository
-  #     # I secrets garantiscono che username e token non siano visibili nei log
-  #     - name: Login to Docker Hub
-  #       uses: docker/login-action@v3
-  #       with:
-  #         username: ${{ secrets.DOCKERHUB_USERNAME }}   # Solo username
-  #         password: ${{ secrets.DOCKERHUB_TOKEN }}      # Token sicuro
+      # Step 4 — Login a Docker Hub usando i secrets del repository
+      # I secrets garantiscono che username e token non siano visibili nei log
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}   # Solo username
+          password: ${{ secrets.DOCKERHUB_TOKEN }}      # Token sicuro
 
-  #     # Step 5 — Ritagga l’immagine per Docker Hub
-  #     # Da: its-node-demo:latest
-  #     # A:  <username>/its-node-demo:latest
-  #     - name: Tag Docker image
-  #       run: |
-  #         docker tag its-node-demo:latest \
-  #         ${{ secrets.DOCKERHUB_USERNAME }}/its-node-demo:latest
+      # Step 5 — Ritagga l’immagine per Docker Hub
+      # Da: its-node-demo:latest
+      # A:  <username>/its-node-demo:latest
+      - name: Tag Docker image
+        run: |
+          docker tag $IMAGE_NAME:${{ github.sha }}
 
 
-  #     # Step 6 — Push finale verso Docker
-  #     - name: Push Docker image to Docker Hub
-  #       run: |
-  #         docker push ${{ secrets.DOCKERHUB_USERNAME }}/its-node-demo:latest
+      # Step 6 — Push finale verso Docker
+      - name: Push Docker image to Docker Hub
+        run: |
+          docker push $IMAGE_NAME:${{ github.sha }}
