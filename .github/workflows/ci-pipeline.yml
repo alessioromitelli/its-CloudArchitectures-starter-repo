@@ -83,6 +83,10 @@ jobs:
         run: |
           gunzip -c image.tar.gz | docker load
 
+      - name: list Docker image
+        run: |
+          docker image ls  
+
       # Step 4 — Login a Docker Hub usando i secrets del repository
       # I secrets garantiscono che username e token non siano visibili nei log
       - name: Login to Docker Hub
