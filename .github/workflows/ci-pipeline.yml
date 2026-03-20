@@ -5,16 +5,16 @@ name: CI + Docker Hub Delivery
 on:
   push:          # Ogni push su qualsiasi branch
     branches: ["main"]
-
+env:
+  IMAGE_NAME: its-node-demo
+  DATE_TAG: ${{ github.run_id }}-${{ github.run_number }}
 # -------------------------
 # JOB 1 — BUILD (CI)
 # -------------------------
 jobs:
   build:
     runs-on: ubuntu-latest # Runner GitHub Actions basato su Ubuntu
-    env:
-      IMAGE_NAME: its-node-demo
-      DATE_TAG: ${{ github.run_id }}-${{ github.run_number }}
+
     steps:
       # Step 1 — Scarica il codice del repository nel runner
       - name: Checkout repository
@@ -66,9 +66,7 @@ jobs:
     
     # Questo job si attiva SOLO se il push è sul branch "main"
     if: github.ref == 'refs/heads/main'
-    env:
-      IMAGE_NAME: its-node-demo
-      DATE_TAG: ${{ github.run_id }}-${{ github.run_number }}
+    
     steps:
 
       # Step 2 — Scarica l’artifact creato dal job BUILD
@@ -109,4 +107,5 @@ jobs:
       # Step 6 — Push finale verso Docker
       - name: Push Docker image to Docker Hub
         run: |
+          docker image ls  
           docker push ${{secrets.DOCKERHUB_USERNAME}}/${{env.IMAGE_NAME}}:${{ github.sha }}
