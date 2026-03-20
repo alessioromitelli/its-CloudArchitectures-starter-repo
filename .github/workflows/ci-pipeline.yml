@@ -39,13 +39,13 @@ jobs:
       # Questa immagine NON sarà pubblicata, solo testata
       - name: Build Docker image
         run: |
-          docker build -t $IMAGE_NAME:${{ github.sha }} .
+          docker build -t ${{env.IMAGE_NAME}}:${{ github.sha }} .
 
       # Step 6 — Salva l’immagine Docker in un file tar.gz
       # cosi può essere trasferita a un altro job
       - name: Save Docker image as artifact
         run: |
-          docker save $IMAGE_NAME:${{ github.sha }} | gzip > image.tar.gz
+          docker save ${{env.IMAGE_NAME}}:${{ github.sha }} | gzip > image.tar.gz
 
       # Step 7 — Carica l’immagine salvata come artifact del workflow
       # Così il job DEPLOY potrà scaricarla
@@ -96,10 +96,10 @@ jobs:
       # A:  <username>/its-node-demo:latest
       - name: Tag Docker image
         run: |
-          docker tag $IMAGE_NAME:${{ github.sha }} $IMAGE_NAME:${{ env.DATE_TAG }}
+          docker tag ${{env.IMAGE_NAME}}:${{ github.sha }} ${{env.IMAGE_NAME}}:${{ env.DATE_TAG }}
 
 
       # Step 6 — Push finale verso Docker
       - name: Push Docker image to Docker Hub
         run: |
-          docker push $IMAGE_NAME:${{ github.sha }}
+          docker push ${{env.IMAGE_NAME}}:${{ github.sha }}
