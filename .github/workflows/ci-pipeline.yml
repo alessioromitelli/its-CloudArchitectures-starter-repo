@@ -50,4 +50,4 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Push image
-        run: docker push $IMAGE_NAME:$TAG
+        run: docker push ${{secrets.DOCKERHUB_USERNAME}}/$IMAGE_NAME:$TAG
