@@ -1,110 +1,53 @@
-# Nome della pipeline che comparirà nella UI di GitHub Act
-name: CI + Docker Hub Delivery
+name: CI - Scalare con Matrix
 
-# Eventi che attivano la pipeline
 on:
-  push:          # Ogni push su qualsiasi branch
+  push:
     branches: ["main"]
-env:
-  IMAGE_NAME: its-node-demo
-  DATE_TAG: ${{ github.run_id }}-${{ github.run_number }}
-# -------------------------
-# JOB 1 — BUILD (CI)
-# -------------------------
+
 jobs:
-  build:
-    runs-on: ubuntu-latest # Runner GitHub Actions basato su Ubuntu
+  test-matrix:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16, 18, 20]
+
+    env:
+      SERVICE_NAME: its-node-demo
 
     steps:
-      # Step 1 — Scarica il codice del repository nel runner
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Step 2 — Installa Node.js 18 sul runner
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: ${{ matrix.node-version }}
 
-      # Step 3 — Installa tutte le dipendenze del progetto (npm install)
       - name: Install dependencies
         run: npm install
 
-      # Step 4 — Esegue i test automatici
-      # Se non ci sono test, non fallisce (|| echo "No tests")
       - name: Run tests
-        run: npm test || echo "No tests"
+        run: npm test --if-present
 
-      # Step 5 — Costruisce l’immagine Docker nel job BUILD
-      # Questa immagine NON sarà pubblicata, solo testata
-      - name: Build Docker image
-        run: |
-          docker build -t ${{env.IMAGE_NAME}}:${{ github.sha }} .
-
-      # Step 6 — Salva l’immagine Docker in un file tar.gz
-      # cosi può essere trasferita a un altro job
-      - name: Save Docker image as artifact
-        run: |
-          docker save ${{env.IMAGE_NAME}}:${{ github.sha }} | gzip > image.tar.gz
-
-      # Step 7 — Carica l’immagine salvata come artifact del workflow
-      # Così il job DEPLOY potrà scaricarla
-      - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image         # Nome dell’artifact
-          path: image.tar.gz         # File da caricare
-          retention-days: 1          # Lo mantiene 1 giorno (per sicurezza)
-
-  # -------------------------
-  # JOB 2 — DEPLOY (CD)
-  # -------------------------
-  deploy:
-    name: Load & Push to Docker Hub
-    needs: build                   # Il job parte SOLO se il job build è riuscito
+  build-image:
+    needs: test-matrix
     runs-on: ubuntu-latest
-    
-    # Questo job si attiva SOLO se il push è sul branch "main"
-    if: github.ref == 'refs/heads/main'
-    
+
+    env:
+      IMAGE_NAME: its-node-demo
+      TAG: ${{ github.sha }}
+
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      # Step 2 — Scarica l’artifact creato dal job BUILD
-      - name: Download Docker image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-image # Nome definito nel job BUILD
+      - name: Build Docker image
+        run: docker build -t $IMAGE_NAME:$TAG .
 
-      # Step 3 — Ricarica l’immagine Docker dal file tar.gz
-      # Importante: NON rifacciamo la build
-      - name: Load Docker image
-        run: |
-          gunzip -c image.tar.gz | docker load
-
-      - name: list Docker image
-        run: |
-          docker image ls  
-
-      # Step 4 — Login a Docker Hub usando i secrets del repository
-      # I secrets garantiscono che username e token non siano visibili nei log
+      # (Opzionale) Abilitare se dovete pushare su Docker Hub
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}   # Solo username
-          password: ${{ secrets.DOCKERHUB_TOKEN }}      # Token sicuro
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      # Step 5 — Ritagga l’immagine per Docker Hub
-      # Da: its-node-demo:latest
-      # A:  <username>/its-node-demo:latest
-      - name: Tag Docker image
-        run: |
-          docker tag ${{env.IMAGE_NAME}}:${{ github.sha }} ${{secrets.DOCKERHUB_USERNAME}}/${{env.IMAGE_NAME}}:${{ github.sha }}
-
-      - name: list Docker image
-        run: |
-          docker image ls  
-
-      # Step 6 — Push finale verso Docker
-      - name: Push Docker image to Docker Hub
-        run: |
-          docker push ${{secrets.DOCKERHUB_USERNAME}}/${{env.IMAGE_NAME}}:${{ github.sha }}
+      - name: Push image
+        run: docker push $IMAGE_NAME:$TAG
